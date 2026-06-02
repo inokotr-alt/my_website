@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ravinder Internet Cafe | Work Dashboard</title>
+    
+    <!-- Supabase SDK Integration (Loads directly for database functions) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        /* Modern Theme Config & Reset */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        /* PREMIUM HIGH-RESOLUTION TECHNOLOGY BACKGROUND */
+        body {
+            color: #f8fafc;
+            min-height: 100vh;
+            padding: 30px 20px;
+            background-image: 
+                linear-gradient(rgba(8, 12, 28, 0.85), rgba(15, 23, 42, 0.95)), 
+                url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1920&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* TOP CORNER LOGIN TRIGGER */
+        .corner-trigger-box {
+            position: absolute;
+            top: 0;
+            right: 0;
+            z-index: 100;
+        }
+
+        .dept-login-trigger-btn {
+            background: rgba(15, 23, 42, 0.8);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            padding: 12px 24px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .dept-login-trigger-btn:hover {
+            background: linear-gradient(135deg, #38bdf8 0%, #6366f1 100%);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+            transform: translateY(-2px);
+        }
+
+        /* PREMIUM DIALOG MODAL BOX */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(4, 7, 15, 0.8);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .dialog-box {
+            width: 360px;
+            background: rgba(15, 23, 42, 0.9);
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+        }
+
+        .modal-overlay.active .dialog-box {
+            transform: scale(1);
+        }
+
+        .dialog-box h3 {
+            font-size: 16px;
+            color: #38bdf8;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+            text-align: center;
+        }
+
+        .close-dialog-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 20px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .close-dialog-btn:hover {
+            color: #ef4444;
+        }
+
+        .login-fields {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 11px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 14px;
+            background: rgba(11, 15, 25, 0.9);
+            border: 1px solid #475569;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .input-group input:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+        }
+
+        .submit-auth-btn {
+            background: linear-gradient(135deg, #38bdf8 0%, #6366f1 100%);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            width: 100%;
+            margin-top: 10px;
+            transition: opacity 0.2s;
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+        }
+
+        /* Glassmorphism Header Area */
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+            background: rgba(15, 23, 42, 0.75);
+            padding: 35px;
+            border-radius: 20px;
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            padding-right: 350px; 
+        }
+
+        header h1 {
+            font-size: 2.6rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+            text-align: left;
+            padding-left: 20px;
+        }
+
+        /* Search Input */
+        .search-box {
+            position: relative;
+            max-width: 550px;
+            margin: 0 0 0 20px;
+        }
+
+        #searchBar {
+            width: 100%;
+            padding: 15px 25px;
+            font-size: 16px;
+            background: rgba(11, 15, 25, 0.85);
+            border: 2px solid #475569;
+            border-radius: 30px;
+            color: #fff;
+            outline: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #searchBar:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.35);
+            background: rgba(11, 15, 25, 0.95);
+        }
+
+        /* Dashboard Grid Layout */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 25px;
+        }
+
+        /* Premium Frosted Glass Card Design */
+        .card {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 30px 20px;
+            text-align: center;
+            color: #f1f5f9;
+            font-weight: 600;
+            font-size: 18px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            background: rgba(30, 41, 59, 0.9);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.6);
+            border-color: rgba(56, 189, 248, 0.6);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+            background: #64748b;
+        }
+        .card.govt::before { background: linear-gradient(to bottom, #ff7b00, #ffae00); }
+        .card.finance::before { background: linear-gradient(to bottom, #10b981, #059669); }
+        .card.csc::before { background: linear-gradient(to bottom, #a855f7, #6366f1); }
+
+        .card.active {
+            background: rgba(56, 189, 248, 0.25);
+            border-color: #38bdf8;
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.45);
+        }
+
+        .card-icon {
+            font-size: 26px;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        /* STYLISH EXPANDABLE DRAWERS */
+        .drawer-container {
+            grid-column: 1 / -1; 
+            display: none; 
+            background: rgba(11, 15, 25, 0.97);
+            border-radius: 16px;
+            padding: 25px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            box-shadow: inset 0 4px 30px rgba(0,0,0,0.8);
+            animation: slideDown 0.35s ease;
+            margin-top: -5px;
+            margin-bottom: 10px;
+        }
+
+        .drawer-title {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-bottom: 18px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 700;
+        }
+
+        .sub-services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 15px;
+        }
+
+        /* SAFE SYSTEM NAVIGATION LINKS */
+        .sub-card {
+            display: block;
+            background: rgba(22, 30, 49, 0.85);
+            border: 1px solid #475569;
+            padding: 16px;
+            border-radius: 12px;
+            text-decoration: none;
+            color: #cbd5e1;
+            font-size: 15px;
+            font-weight: 500;
+            text-align: center;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .sub-card:hover {
+            background: linear-gradient(135deg, #38bdf8 0%, #6366f1 100%);
+            color: #0f172a;
+            border-color: transparent;
+            font-weight: 600;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.6);
+            transform: scale(1.02);
+        }
+
+        /* EMBEDDED REAL-TIME DATABASE VIEW SECTION */
+        #embeddedDatabaseSection {
+            display: none;
+            background: rgba(15, 23, 42, 0.98);
+            border: 2px solid #38bdf8;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+            animation: slideDown 0.4s ease;
+        }
+
+        .db-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #1e293b;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        .close-db-btn {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid #ef4444;
+            padding: 8px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .close-db-btn:hover {
+            background: #ef4444;
+            color: white;
+        }
+
+        /* Form Controls Frame Inside Database Panel */
+        .form-panel {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            align-items: end;
+        }
+
+        .field-box {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .field-box label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+
+        .field-box input, .field-box select {
+            width: 100%;
+            padding: 10px 12px;
+            background: #0b0f19;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .field-box input:focus, .field-box select:focus {
+            border-color: #38bdf8;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #38bdf8 0%, #6366f1 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        /* Database Table Format */
+        .table-responsive-box {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            background: #1e293b;
+            color: #94a3b8;
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            padding: 14px 18px;
+        }
+
+        td {
+            padding: 14px 18px;
+            border-bottom: 1px solid #1e293b;
+            color: #cbd5e1;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-edit, .btn-delete {
+            background: transparent;
+            border: 1px solid #475569;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            color: #cbd5e1;
+        }
+
+        .btn-edit:hover { border-color: #eab308; color: #eab308; }
+        .btn-delete:hover { border-color: #ef4444; color: #ef4444; }
+
+        .status-message {
+            text-align: center;
+            padding: 30px;
+            color: #64748b;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .corner-trigger-box { position: relative; width: 100%; margin-bottom: 25px; text-align: center; }
+            header { padding-right: 35px; }
+            header h1, .search-box { text-align: center; margin: 0 auto; }
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <!-- TOP CORNER DIALOG TRIGGER -->
+        <div class="corner-trigger-box" id="triggerBox">
+            <button class="dept-login-trigger-btn" onclick="openLoginModal()">🏛️ Database Core</button>
+        </div>
+
+        <!-- AUTHENTICATION FORM MODAL WINDOW -->
+        <div class="modal-overlay" id="loginModalOverlay">
+            <div class="dialog-box">
+                <button class="close-dialog-btn" onclick="closeLoginModal()">&times;</button>
+                <h3>🔒 Secure Authorization</h3>
+                <div class="login-fields">
+                    <div class="input-group">
+                        <label>Operator ID</label>
+                        <input type="text" id="modalUser" placeholder="admin">
+                    </div>
+                    <div class="input-group">
+                        <label>Security Password</label>
+                        <input type="password" id="modalPass" placeholder="password123">
+                    </div>
+                    <button class="submit-auth-btn" onclick="checkCredentials()">Verify Login</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- EMBEDDED INTERNAL DATABASE CORE PANEL -->
+        <div id="embeddedDatabaseSection">
+            <div class="db-header">
+                <h2 style="color: #38bdf8; font-size: 22px;">📊 Central Records Database Panel</h2>
+                <button class="close-db-btn" onclick="closeDatabase()">Exit Panel</button>
+            </div>
+            
+            <!-- TRANS-ACT FORMS -->
+            <div class="form-panel">
+                <h4 id="formTitle" style="margin-bottom:15px; font-size:14px; color:#f1f5f9; text-transform:uppercase;">📝 Add New Pending Work</h4>
+                <form id="workForm" onsubmit="handleFormSubmit(event)">
+                    <input type="hidden" id="editRowId">
+                    <div class="input-row">
+                        <div class="field-box">
+                            <label>Customer Name</label>
+                            <input type="text" id="custName" placeholder="Customer name..." required>
+                        </div>
+                        <div class="field-box">
+                            <label>Service / Work Type</label>
+                            <input type="text" id="serviceType" placeholder="Passport, eSewa, RC..." required>
+                        </div>
+                        <div class="field-box">
+                            <label>Work Status</label>
+                            <select id="workStatus">
+                                <option value="Pending">⌛ Pending</option>
+                                <option value="In Progress">⚙️ In Progress</option>
+                                <option value="Completed">✅ Completed</option>
+                            </select>
+                        </div>
+                        <div class="field-box">
+                            <label>Fee Status</label>
+                            <input type="text" id="feeStatus" placeholder="Paid ₹500, Unpaid..." required>
+                        </div>
+                        <button type="submit" class="btn-submit" id="submitBtn">Save Data</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- SHEET ENGINE VIEWER FRAME -->
+            <div class="table-responsive-box">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Customer Identity</th>
+                            <th>Assigned Task Route</th>
+                            <th>Workflow Status</th>
+                            <th>Fee Transaction Log</th>
+                            <th>Control Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="websiteTableRows">
+                        <tr>
+                            <td colspan="5" class="status-message">Connecting to live Supabase servers...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- MAIN DASHBOARD HUB VIEW CONTAINER -->
+        <div id="mainDashboardView">
+            <header id="mainHeader">
+                <h1>Ravinder Internet Cafe</h1>
+                <div class="search-box">
+                    <input type="text" id="searchBar" onkeyup="filterLinks()" placeholder="Search main portals...">
+                </div>
+            </header>
+
+            <div class="grid-container" id="linksGrid">
+                
+                <!-- 1. PASSPORT SEVA -->
+                <div class="card govt" onclick="toggleDrawer('passportDrawer', this)">
+                    <span class="card-icon">✈️</span> Passport Seva
+                </div>
+                <div id="passportDrawer" class="drawer-container">
+                    <div class="drawer-title">Passport Services Portal</div>
+                    <div class="sub-services-grid">
+                        <div onclick="safeNavigate('https://portal2.passportindia.gov.in/AppOnlineProject/user/welcome')" class="sub-card">User Login / Apply</div>
+                        <div onclick="safeNavigate('https://portal2.passportindia.gov.in/AppOnlineProject/online/procFormSubOnl')" class="sub-card">Track Application Status</div>
+                        <div onclick="safeNavigate('https://portal1.passportindia.gov.in/AppOnlineProject/online/locateAppointmentAvailability')" class="sub-card">Check Appointment Availability</div>
+                    </div>
+                </div>
+
+                <!-- 2. ESEWA PUNJAB -->
+                <div class="card govt" onclick="toggleDrawer('esewaDrawer', this)">
+                    <span class="card-icon">🏛️</span> eSewa Punjab
+                </div>
+                <div id="esewaDrawer" class="drawer-container">
+                    <div class="drawer-title">eSewa Punjab Services</div>
+                    <div class="sub-services-grid">
+                        <div onclick="safeNavigate('https://connect.punjab.gov.in/ssocitizen/register/https:%2F%2Fconnect.punjab.gov.in')" class="sub-card">REGISTRATION NEW APPLICANT</div>
+<div onclick="safeNavigate('https://connect.punjab.gov.in/')" class="sub-card">CITIZEN LOGIN</div>
+<div onclick="safeNavigate('https://esewa.punjab.gov.in/')" class="sub-card">DEPARTMENT LOGIN</div>
+ <div onclick="safeNavigate('https://esewa.punjab.gov.in/trackStatus')" class="sub-card">TRACK APPLICATION STATUS</div>
+<div onclick="safeNavigate('https://esewa.punjab.gov.in/certificateDownload')" class="sub-card">DOWNLOAD CERTIFICATE</div>
+
+                        <div onclick="safeNavigate('https://esewa.punjab.gov.in/verify-certificate')" class="sub-card">VERIFIY CERTIFCATE</div>
+                    </div>
+                </div>
+               <!-- 3. ADDHAR UPDATE -->
+                 <div class="card govt" onclick="toggleDrawer('aadhaarDrawer', this)">
+    <span class="card-icon">🆔</span> Aadhaar Services
+</div>
+<div id="aadhaarDrawer" class="drawer-container">
+    <div class="drawer-title">UIDAI Aadhaar Portals</div>
+    <div class="sub-services-grid">
+        <div onclick="safeNavigate('https://tathya.uidai.gov.in/access/login?role=resident')" class="sub-card">OLD PORTAL MY ADDHAR LOGIN</div>
+        <div onclick="safeNavigate('https://myaadhaarbeta.uidai.gov.in/')" class="sub-card">NEW PORTAL MY ADDHAR LOGIN</div>
+        <div onclick="safeNavigate('https://myaadhaar.uidai.gov.in/verify-email-mobile/en')" class="sub-card">VERIFY MOBILE NUMBER</div>
+        <div onclick="safeNavigate('https://myaadhaar.uidai.gov.in/CheckAadhaarStatus/en')" class="sub-card">CHECKS STATUS</div>
+        <div onclick="safeNavigate('https://myaadhaar.uidai.gov.in/genricDownloadAadhaar/en')" class="sub-card">DOWNOAD ADDHAR CARD</div>
+        <div onclick="safeNavigate('https://myaadhaar.uidai.gov.in/check-aadhaar-validity/en')" class="sub-card">CHECK ADDHAR VALDITY</div>
+        <div onclick="safeNavigate('https://prodigital2.shop/login')" class="sub-card">PRO DIGITAL UCL</div>
+    </div>
+</div>
+
+                <!-- 3. MPARIVAHAN -->
+                <div class="card govt" onclick="toggleDrawer('mparivahanDrawer', this)">
+                    <span class="card-icon">🚘</span> mParivahan Services
+                </div>
+                <div id="mparivahanDrawer" class="drawer-container">
+                    <div class="drawer-title">mParivahan Internal Portals</div>
+                    <div class="sub-services-grid">
+                        <div onclick="safeNavigate('https://sarathi.parivahan.gov.in/')" class="sub-card">Driving License Services</div>
+                        <div onclick="safeNavigate('https://vahan.parivahan.gov.in/')" class="sub-card">Vehicle Registration (RC)</div>
+                        <div onclick="safeNavigate('https://echallan.parivahan.gov.in/')" class="sub-card">Check / Pay Challan</div>
+                        <div onclick="safeNavigate('https://parivahan.gov.in/parivahan//en/content/fancy-number-booking')" class="sub-card">Fancy Number Booking</div>
+                    </div>
+                </div>
+
+                <!-- 4. EPFO CLAIM -->
+                <div class="card finance" onclick="toggleDrawer('epfoDrawer', this)">
+                    <span class="card-icon">💰</span> EPFO Portal
+                </div>
+                <div id="epfoDrawer" class="drawer-container">
+                    <div class="drawer-title">EPFO Management Services</div>
+                    <div class="sub-services-grid">
+                        <div onclick="safeNavigate('https://unifiedportal-mem.epfindia.gov.in/memberinterface/')" class="sub-card">Member UAN Login</div>
+                        <div onclick="safeNavigate('https://passbook.epfindia.gov.in/MemberPassBook/Login')" class="sub-card">EPF Passbook & Claim Status</div>
+                        <div onclick="safeNavigate('https://unifiedportal-emp.epfindia.gov.in/epfo/')" class="sub-card">Employer Portal Login</div>
+                    </div>
+                </div>
+
+                <!-- 5. CSC LOGIN -->
+                <div class="card csc" onclick="toggleDrawer('cscDrawer', this)">
+                    <span class="card-icon">🖥️</span> CSC Digital Seva
+                </div>
+                <div id="cscDrawer" class="drawer-container">
+                    <div class="drawer-title">CSC Common Service Center Portals</div>
+                    <div class="sub-services-grid">
+                        <div onclick="safeNavigate('https://digitalseva.csc.gov.in/')" class="sub-card">Digital Seva Login</div>
+                        <div onclick="safeNavigate('https://register.csc.gov.in/')" class="sub-card">CSC VLE Registration</div>
+                        <div onclick="safeNavigate('https://pmkisan.gov.in/')" class="sub-card">PM Kisan CSC Services</div>
+                    </div>
+                </div>
+
+                <!-- 6. DOGMA SOFT -->
+                <div class="card finance" onclick="toggleDrawer('dogmaDrawer', this)">
+                    <span class="card-icon">⚙️</span> Dogma Soft
+                </div>
+                <div id="dogmaDrawer" class="drawer-container">
+                    <div class="drawer-title">Dogma Soft Services</div>
+                    <div class="sub-services-grid">
+                        <div onclick="safeNavigate('https://dogma.in/login/')" class="sub-card">Retailer / Partner Login</div>
+                        <div onclick="safeNavigate('https://dogma.in/')" class="sub-card">Main Official Website</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MAIN ENGINE ROUTINES -->
+    <script>
+        // --- 1. SUPABASE CLIENT INITIALIZATION ---
+        const SUPABASE_URL = "https://lyualxycktraskttaoob.supabase.co"; 
+        const SUPABASE_ANON_KEY = "sb_publishable_1MsSC9Ib5q3tG13Y4FPv4A_9yN1XdB8";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // --- 2. POP-UP MODAL ENGINE CONTROLLERS ---
+        function openLoginModal() {
+            document.getElementById('loginModalOverlay').classList.add('active');
+            document.getElementById('modalUser').focus();
+        }
+
+        function closeLoginModal() {
+            document.getElementById('loginModalOverlay').classList.remove('active');
+            document.getElementById('modalUser').value = "";
+            document.getElementById('modalPass').value = "";
+        }
+
+        // --- 3. RUNTIME VIEW PROFILE CONFIGURATIONS ---
+        function checkCredentials() {
+            const userField = document.getElementById('modalUser').value.trim();
+            const passField = document.getElementById('modalPass').value.trim();
+
+            if (userField === "admin" && passField === "password123") {
+                closeLoginModal();
+                
+                document.getElementById('mainDashboardView').style.display = 'none';
+                document.getElementById('triggerBox').style.display = 'none';
+                document.getElementById('embeddedDatabaseSection').style.display = 'block';
+                
+                showDataOnWebsite();
+            } else {
+                alert("❌ Unauthorized identity credentials. Access blocked.");
+            }
+        }
+
+        function closeDatabase() {
+            document.getElementById('embeddedDatabaseSection').style.display = 'none';
+            document.getElementById('mainDashboardView').style.display = 'block';
+            document.getElementById('triggerBox').style.display = 'block';
+        }
+
+        // --- 4. FAIL-SAFE EXTERNAL ROUTER ---
+        function safeNavigate(urlAddress) {
+            const targetWindow = window.open(urlAddress, '_blank');
+            if (!targetWindow || targetWindow.closed || typeof targetWindow.closed == 'undefined') {
+                 window.location.href = urlAddress;
+            }
+        }
+
+        // --- 5. DRAWER VIEW INTERACTIVE BEHAVIORS ---
+        function toggleDrawer(drawerId, cardElement) {
+            let targetDrawer = document.getElementById(drawerId);
+            let allDrawers = document.getElementsByClassName('drawer-container');
+            let allCards = document.getElementsByClassName('card');
+
+            if (targetDrawer.style.display === "block") {
+                targetDrawer.style.display = "none";
+                cardElement.classList.remove('active');
+                return;
+            }
+
+            for (let i = 0; i < allDrawers.length; i++) { allDrawers[i].style.display = "none"; }
+            for (let j = 0; j < allCards.length; j++) { allCards[j].classList.remove('active'); }
+
+            targetDrawer.style.display = "block";
+            cardElement.classList.add('active');
+        }
+
+        // --- 6. REAL-TIME SEARCH FILTER SYSTEM ---
+        function filterLinks() {
+            let input = document.getElementById('searchBar').value.toLowerCase();
+            let cards = document.getElementsByClassName('card');
+            let drawers = document.getElementsByClassName('drawer-container');
+            
+            for(let d=0; d<drawers.length; d++) { drawers[d].style.display = "none"; }
+            for (let c = 0; c < cards.length; c++) { cards[c].classList.remove('active'); }
+
+            for (let i = 0; i < cards.length; i++) {
+                let txtValue = cards[i].textContent || cards[i].innerText;
+                if (txtValue.toLowerCase().indexOf(input) > -1) {
+                    cards[i].style.display = "";
+                } else {
+                    cards[i].style.display = "none";
+                }
+            }
+        }
+
+        // --- 7. DATABASE READ OPERATIONS (SELECT) ---
+        async function showDataOnWebsite() {
+            const tableBody = document.getElementById('websiteTableRows');
+            tableBody.innerHTML = `<tr><td colspan="5" class="status-message">Fetching data entries from cloud connection...</td></tr>`;
+            
+            const { data, error } = await supabaseClient
+                .from('pending_works')
+                .select('*');
+
+            if (error) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="status-message" style="color:#ef4444;">Error mapping schema: ${error.message}<br><small>Ensure Row Level Security (RLS) policies are config-ready in Supabase.</small></td></tr>`;
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="status-message">No records found. Input data updates in the row panel above.</td></tr>`;
+                return;
+            }
+
+            tableBody.innerHTML = "";
+
+            data.forEach(row => {
+                const htmlRow = document.createElement('tr');
+                htmlRow.innerHTML = `
+                    <td><strong>${cleanText(row.customer_name)}</strong></td>
+                    <td>${cleanText(row.service_type)}</td>
+                    <td><span class="badge" style="background:${getStatusStyle(row.work_status)}; color:white;">${cleanText(row.work_status)}</span></td>
+                    <td>${cleanText(row.fee_status)}</td>
+                    <td class="action-btns">
+                        <button class="btn-edit" onclick="prepareUpdate('${row.id}', '${escapeQuote(row.customer_name)}', '${escapeQuote(row.service_type)}', '${escapeQuote(row.work_status)}', '${escapeQuote(row.fee_status)}')">✏️ Update</button>
+                        <button class="btn-delete" onclick="deleteEntry('${row.id}')">🗑️ Delete</button>
+                    </td>
+                `;
+                tableBody.appendChild(htmlRow);
+            });
+        }
+
+        // --- 8. DATABASE WRITE OPERATIONS (INSERT / UPDATE) ---
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+            
+            const rowId = document.getElementById('editRowId').value;
+            const cName = document.getElementById('custName').value;
+            const sType = document.getElementById('serviceType').value;
+            const wStatus = document.getElementById('workStatus').value;
+            const fStatus = document.getElementById('feeStatus').value;
+
+            if (rowId) {
+                const { error } = await supabaseClient
+                    .from('pending_works')
+                    .update({ customer_name: cName, service_type: sType, work_status: wStatus, fee_status: fStatus })
+                    .eq('id', rowId); 
+
+                if (error) {
+                    alert("⚠️ Access Denied / System Mismatch.\n\nReason: " + error.message + "\n\nFix: Disable RLS in your Supabase table setting panel.");
+                } else {
+                    alert("✏️ Entry updated successfully!");
+                    resetForm();
+                    showDataOnWebsite();
+                }
+            } else {
+                const { error } = await supabaseClient
+                    .from('pending_works')
+                    .insert([{ customer_name: cName, service_type: sType, work_status: wStatus, fee_status: fStatus }]);
+
+                if (error) {
+                    alert("⚠️ Data write blocked.\n\nReason: " + error.message + "\n\nFix: Ensure your table contains exact lowercase columns matching your code parameters.");
+                } else {
+                    alert("🎉 Record successfully logged into Supabase!");
+                    resetForm();
+                    showDataOnWebsite();
+                }
+            }
+        }
+
+        // --- 9. MAP UPDATE ELEMENTS TO FORM PREVIEWS ---
+        function prepareUpdate(id, name, type, status, fee) {
+            document.getElementById('editRowId').value = id;
+            document.getElementById('custName').value = name;
+            document.getElementById('serviceType').value = type;
+            document.getElementById('workStatus').value = status;
+            document.getElementById('feeStatus').value = fee;
+
+            document.getElementById('formTitle').innerText = "✏️ Update Selected Entry";
+            document.getElementById('submitBtn').innerText = "Apply Changes";
+            document.getElementById('submitBtn').style.background = "linear-gradient(135deg, #eab308 0%, #ca8a04 100%)";
+        }
+
+        // --- 10. DATABASE REMOVAL OPERATIONS (DELETE) ---
+        async function deleteEntry(id) {
+            if (confirm("Permanently erase this record file? This process cannot be undone.")) {
+                const { error } = await supabaseClient
+                    .from('pending_works')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) {
+                    alert("⚠️ Removal target blocked: " + error.message);
+                } else {
+                    alert("🗑️ Entry removed.");
+                    showDataOnWebsite();
+                }
+            }
+        }
+
+        // --- 11. HELPER & CLEANING SCHEMAS ---
+        function resetForm() {
+            document.getElementById('workForm').reset();
+            document.getElementById('editRowId').value = "";
+            document.getElementById('workStatus').value = "Pending";
+            document.getElementById('formTitle').innerText = "📝 Add New Pending Work";
+            document.getElementById('submitBtn').innerText = "Save Data";
+            document.getElementById('submitBtn').style.background = "linear-gradient(135deg, #38bdf8 0%, #6366f1 100%)";
+        }
+
+        function getStatusStyle(status) {
+            if(status.includes("Completed")) return "#10b981";
+            if(status.includes("In Progress")) return "#3b82f6";
+            return "#f59e0b";
+        }
+
+        function cleanText(str) {
+            if(!str) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+        function escapeQuote(str) {
+            if(!str) return '';
+            return String(str).replace(/'/g, "\\'");
+        }
+
+        window.onclick = function(event) {
+            const overlay = document.getElementById('loginModalOverlay');
+            if (event.target == overlay) { closeLoginModal(); }
+        }
+    </script>
+</body>
+</html>
